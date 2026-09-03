@@ -86,19 +86,19 @@
         </div>
         <hr class="my-2">
         <div class="row text-center mt-3">
-            <div class="col-md-4 border-end">
-                <span class="text-muted small d-block">Total Belanja</span>
-                <h5 class="fw-bold mb-0">Rp {{ number_format($trx['total'], 0, ',', '.') }}</h5>
-            </div>
-            <div class="col-md-4 border-end">
-                <span class="text-muted small d-block">Uang Dibayar</span>
-                <h5 class="fw-bold mb-0 text-primary">Rp {{ number_format($trx['bayar'], 0, ',', '.') }}</h5>
-            </div>
-            <div class="col-md-4">
-                <span class="text-muted small d-block">Kembalian</span>
-                <h4 class="fw-bold mb-0 text-success">Rp {{ number_format($trx['kembalian'], 0, ',', '.') }}</h4>
-            </div>
-        </div>
+    <div class="col-md-4 border-end">
+        <span class="text-muted small d-block">Total Belanja</span>
+        <h5 class="fw-bold mb-0">Rp {{ number_format($trx['total'], 0, ',', '.') }}</h5>
+    </div>
+    <div class="col-md-4 border-end">
+        <span class="text-muted small d-block">Uang Dibayar</span>
+        <h5 class="fw-bold mb-0 text-primary">Rp {{ number_format($trx['bayar'], 0, ',', '.') }}</h5>
+    </div>
+    <div class="col-md-4">
+        <span class="text-muted small d-block">Kembalian</span>
+        <h4 class="fw-bold mb-0 text-success">Rp {{ number_format($trx['kembalian'], 0, ',', '.') }}</h4>
+    </div>
+</div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif

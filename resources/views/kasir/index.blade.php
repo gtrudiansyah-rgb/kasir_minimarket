@@ -86,36 +86,21 @@
         </div>
         <hr class="my-2">
         <div class="row text-center mt-3">
-    <div class="col-md-4 border-end">
-        <span class="text-muted small d-block">Total Belanja</span>
-        <h5 class="fw-bold mb-0">Rp {{ number_format($trx['total'], 0, ',', '.') }}</h5>
-    </div>
-    <div class="col-md-4 border-end">
-        <span class="text-muted small d-block">Uang Dibayar</span>
-        <h5 class="fw-bold mb-0 text-primary">Rp {{ number_format($trx['bayar'], 0, ',', '.') }}</h5>
-    </div>
-    <div class="col-md-4">
-        <span class="text-muted small d-block">Kembalian</span>
-        <h4 class="fw-bold mb-0 text-success">Rp {{ number_format($trx['kembalian'], 0, ',', '.') }}</h4>
-    </div>
-</div>
+            <div class="col-md-4 border-end">
+                <span class="text-muted small d-block">Total Belanja</span>
+                <h5 class="fw-bold mb-0">Rp {{ number_format($trx['total'], 0, ',', '.') }}</h5>
+            </div>
+            <div class="col-md-4 border-end">
+                <span class="text-muted small d-block">Uang Dibayar</span>
+                <h5 class="fw-bold mb-0 text-primary">Rp {{ number_format($trx['bayar'], 0, ',', '.') }}</h5>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small d-block">Kembalian</span>
+                <h4 class="fw-bold mb-0 text-success">Rp {{ number_format($trx['kembalian'], 0, ',', '.') }}</h4>
+            </div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-@endif
-
-    <h3 class="text-end">Total: Rp {{ number_format($total) }}</h3>
-</div>
-
-<!-- Form Bayar / Checkout -->
-@if(!empty($cart))
-    <form action="{{ route('kasir.checkout') }}" method="POST" class="card p-3 mt-3">
-        @csrf
-        <div class="mb-3">
-            <label class="form-label fw-bold">Uang Bayar (Rp)</label>
-            <input type="number" name="pay_amount" class="form-control" placeholder="Masukkan nominal uang bayar" required min="{{ $total }}">
-        </div>
-        <button type="submit" class="btn btn-success btn-lg w-100">Bayar & Simpan Transaksi</button>
-    </form>
 @endif
 
 

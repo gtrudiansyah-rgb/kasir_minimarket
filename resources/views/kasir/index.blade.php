@@ -71,6 +71,38 @@
         </tbody>
     </table>
 
+    @if(session('transaksi_sukses'))
+    @php $trx = session('transaksi_sukses'); @endphp
+    <div class="alert alert-success alert-dismissible fade show mb-4 shadow-sm" role="alert">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="alert-heading fw-bold mb-0">
+                <i class="bi bi-check-circle-fill me-2"></i>Transaksi Berhasil!
+            </h5>
+            @if(isset($trx['print_id']))
+                <a href="{{ route('kasir.print', $trx['print_id']) }}" target="_blank" class="btn btn-sm btn-outline-success fw-bold">
+                    <i class="bi bi-printer me-1"></i> Cetak Struk
+                </a>
+            @endif
+        </div>
+        <hr class="my-2">
+        <div class="row text-center mt-3">
+            <div class="col-md-4 border-end">
+                <span class="text-muted small d-block">Total Belanja</span>
+                <h5 class="fw-bold mb-0">Rp {{ number_format($trx['total'], 0, ',', '.') }}</h5>
+            </div>
+            <div class="col-md-4 border-end">
+                <span class="text-muted small d-block">Uang Dibayar</span>
+                <h5 class="fw-bold mb-0 text-primary">Rp {{ number_format($trx['bayar'], 0, ',', '.') }}</h5>
+            </div>
+            <div class="col-md-4">
+                <span class="text-muted small d-block">Kembalian</span>
+                <h4 class="fw-bold mb-0 text-success">Rp {{ number_format($trx['kembalian'], 0, ',', '.') }}</h4>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
     <h3 class="text-end">Total: Rp {{ number_format($total) }}</h3>
 </div>
 

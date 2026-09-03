@@ -112,7 +112,12 @@ class TransactionController extends Controller
 
         session()->forget('cart');
 
-        return redirect()->route('kasir.print', $transaction->id);
+        return redirect()->route('kasir.index')->with('transaksi_sukses', [
+            'total'     => $transaction->total_price,
+            'bayar'     => $transaction->pay_amount,
+            'kembalian' => $transaction->return_amount,
+            'print_id'  => $transaction->id,
+        ]);
     }
 
     // 6. Cetak Struk Transaksi

@@ -1,0 +1,101 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container">
+    <h2 class="mb-4">Halaman Kasir</h2>
+
+    <!-- Pesan Sukses / Kembalian -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <strong>Berhasil!</strong> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <!-- Pesan Gagal / Error -->
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <strong>Gagal!</strong> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <!-- Form Scan Barcode / Input Produk -->
+    <form action="{{ route('kasir.add') }}" method="POST" class="mb-4">
+        @csrf
+        <div class="input-group">
+            <input type="text" name="code" id="barcode" class="form-control" placeholder="Scan Barcode / Ketik Kode Produk..." autofocus required>
+            <button class="btn btn-primary" type="submit">Tambah</button>
+        </div>
+    </form>
+
+    <!-- Tabel Keranjang Belanja -->
+    <table class="table table-bordered align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Nama Produk</th>
+                <th>Harga</th>
+                <th style="width: 180px;">Jumlah</th>
+                <th>Subtotal</th>
+                <th style="width: 100px;" class="text-center">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($cart as $id => $item)
+                <tr>
+                    <td>{{ $item['name'] }}</td>
+                    <td>Rp {{ number_format($item['price']) }}</td>
+                    <td>
+                        <!-- Form Ubah Jumlah -->
+                        <form action="{{ route('kasir.cart.update') }}" method="POST" class="d-flex align-items-center">
+                            @csrf
+                            <input type="hidden" name="product_id" value="{{ $id }}">
+                            <input type="number" name="quantity" value="{{ $item['quantity'] }}" min="1" class="form-control form-control-sm me-2" style="width: 80px;">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Update Jumlah">🔄</button>
+                        </form>
+                    </td>
+                    <td>Rp {{ number_format($item['subtotal'] ?? ($item['price'] * $item['quantity'])) }}</td>
+                    <td class="text-center">
+                        <!-- Form Hapus Item -->
+                        <form action="{{ route('kasir.cart.remove', $id) }}" method="POST" onsubmit="return confirm('Hapus produk ini dari keranjang?')">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Hapus</button>
+                        </form>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center text-muted">Keranjang masih kosong. Silakan scan barcode.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <h3 class="text-end">Total: Rp {{ number_format($total) }}</h3>
+</div>
+
+<!-- Form Bayar / Checkout -->
+@if(!empty($cart))
+    <form action="{{ route('kasir.checkout') }}" method="POST" class="card p-3 mt-3">
+        @csrf
+        <div class="mb-3">
+            <label class="form-label fw-bold">Uang Bayar (Rp)</label>
+            <input type="number" name="pay_amount" class="form-control" placeholder="Masukkan nominal uang bayar" required min="{{ $total }}">
+        </div>
+        <button type="submit" class="btn btn-success btn-lg w-100">Bayar & Simpan Transaksi</button>
+    </form>
+@endif
+
+
+
+    <script>
+        document.getElementById('barcode').focus();
+    </script>
+
+    @if(session('print_id'))
+        <script>
+            // Otomatis buka struk di TAB BARU tanpa meninggalkan halaman kasir
+            window.open("{{ route('kasir.print', session('print_id')) }}", "_blank");
+        </script>
+    @endif
+@endsection

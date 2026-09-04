@@ -160,4 +160,11 @@ class TransactionController extends Controller
 
         return view('laporan.index', compact('transactions', 'totalIncome', 'startDate', 'endDate'));
     }
+
+
+    public function reportDetail($id)
+{
+    $transaction = Transaction::with(['details.product'])->findOrFail($id);
+    return view('laporan.detail', compact('transaction'));
+}
 }

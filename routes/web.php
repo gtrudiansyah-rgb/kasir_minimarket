@@ -24,6 +24,7 @@ Route::get('/kasir/print/{id}', [TransactionController::class, 'print'])->name('
 
 // Route Laporan
 Route::get('/laporan', [TransactionController::class, 'report'])->name('laporan.index');
+Route::get('/laporan/{id}', [TransactionController::class, 'reportDetail'])->name('laporan.detail');
 
 // Route khusus bersihkan keranjang jika tersangkut Rp 0
 Route::get('/clear-cart', function () {

@@ -50,11 +50,12 @@
                         <td>Rp {{ number_format($trx->total_price) }}</td>
                         <td>Rp {{ number_format($trx->pay_amount) }}</td>
                         <td>Rp {{ number_format($trx->return_amount) }}</td>
-                        <td class="text-center">
-                            <a href="{{ route('kasir.print', $trx->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                🖨️ Cetak Struk
-                            </a>
-                        </td>
+                       <td class="text-center">
+    <a href="{{ route('laporan.detail', $trx->id) }}" class="btn btn-sm btn-info text-white">Detail</a>
+    <a href="{{ route('kasir.print', $trx->id) }}" target="_blank" class="btn btn-sm btn-secondary">
+        🖨️ Cetak Struk
+    </a>
+</td>
                     </tr>
                 @empty
                     <tr>

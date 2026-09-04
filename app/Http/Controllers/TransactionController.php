@@ -84,7 +84,7 @@ class TransactionController extends Controller
     }
 
     // 5. Proses Checkout & Potong Stok Otomatis
-    public function store(Request $request)
+    public function checkout(Request $request)
     {
         $cart = session()->get('cart', []);
 
@@ -100,11 +100,11 @@ class TransactionController extends Controller
 
         $payAmount = $request->pay_amount;
 
-        if ($payAmount < $totalPrice) {
+        if (!$payAmount || $payAmount < $totalPrice) {
             return redirect()->back()->with('error', 'Uang bayar kurang dari total belanja!');
         }
 
-        // Cek kecukupan stok sebelum diproses (pakai kolom 'stock')
+        // Cek kecukupan stok sebelum diproses
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
             if (!$product || $product->stock < $item['quantity']) {
@@ -112,14 +112,15 @@ class TransactionController extends Controller
             }
         }
 
-        // Simpan data transaksi utama
+        // Simpan data transaksi utama ke database
         $transaction = Transaction::create([
-            'total_price'   => $totalPrice,
-            'pay_amount'    => $payAmount,
-            'return_amount' => $payAmount - $totalPrice,
+            'invoice_number' => 'INV-' . date('YmdHis'),
+            'total_price'    => $totalPrice,
+            'pay_amount'     => $payAmount,
+            'return_amount'  => $payAmount - $totalPrice,
         ]);
 
-        // Potong stok produk otomatis di database (pakai kolom 'stock')
+        // Potong stok produk otomatis di database
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
             if ($product) {

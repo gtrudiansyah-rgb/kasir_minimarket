@@ -32,13 +32,13 @@ class TransactionController extends Controller
 
         if (isset($cart[$product->id])) {
             $cart[$product->id]['quantity']++;
-            $cart[$product->id]['subtotal'] = $cart[$product->id]['quantity'] * $product->price;
+            $cart[$product->id]['subtotal'] = $cart[$product->id]['quantity'] * $product->selling_price;
         } else {
             $cart[$product->id] = [
                 'name'     => $product->name,
-                'price'    => $product->price,
+                'price'    => $product->selling_price,
                 'quantity' => 1,
-                'subtotal' => $product->price,
+                'subtotal' => $product->selling_price,
             ];
         }
 
@@ -84,7 +84,7 @@ class TransactionController extends Controller
     }
 
     // 5. Proses Checkout & Potong Stok Otomatis
-    public function checkout(Request $request)
+    public function store(Request $request)
     {
         $cart = session()->get('cart', []);
 
@@ -104,11 +104,11 @@ class TransactionController extends Controller
             return redirect()->back()->with('error', 'Uang bayar kurang dari total belanja!');
         }
 
-        // Cek kecukupan stok sebelum diproses
+        // Cek kecukupan stok sebelum diproses (pakai kolom 'stock')
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
-            if (!$product || $product->stok < $item['quantity']) {
-                return redirect()->back()->with('error', "Stok '{$item['name']}' tidak mencukupi! Sisa stok: " . ($product->stok ?? 0));
+            if (!$product || $product->stock < $item['quantity']) {
+                return redirect()->back()->with('error', "Stok '{$item['name']}' tidak mencukupi! Sisa stok: " . ($product->stock ?? 0));
             }
         }
 
@@ -119,11 +119,11 @@ class TransactionController extends Controller
             'return_amount' => $payAmount - $totalPrice,
         ]);
 
-        // Potong stok produk otomatis di database
+        // Potong stok produk otomatis di database (pakai kolom 'stock')
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
             if ($product) {
-                $product->decrement('stok', $item['quantity']);
+                $product->decrement('stock', $item['quantity']);
             }
         }
 

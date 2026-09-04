@@ -18,31 +18,27 @@ class TransactionController extends Controller
     }
 
     // 2. Tambah Produk ke Keranjang
-    // 2. Tambah Produk ke Keranjang
     public function addProduct(Request $request)
     {
         $product = Product::where('code', $request->code)
-                    ->orWhere('id', $request->code)
-                    ->first();
+            ->orWhere('id', $request->code)
+            ->first();
 
         if (!$product) {
-            return redirect()->back()->with('error', 'Kode produk tidak ditemukan!');
+            return redirect()->back()->with('error', 'Produk tidak ditemukan!');
         }
-
-        // Mengambil harga asli dari kolom database 'selling_price'
-        $price = $product->selling_price;
 
         $cart = session()->get('cart', []);
 
         if (isset($cart[$product->id])) {
             $cart[$product->id]['quantity']++;
-            $cart[$product->id]['subtotal'] = $price * $cart[$product->id]['quantity'];
+            $cart[$product->id]['subtotal'] = $cart[$product->id]['quantity'] * $product->price;
         } else {
             $cart[$product->id] = [
                 'name'     => $product->name,
-                'price'    => $price,
+                'price'    => $product->price,
                 'quantity' => 1,
-                'subtotal' => $price
+                'subtotal' => $product->price,
             ];
         }
 
@@ -50,6 +46,7 @@ class TransactionController extends Controller
 
         return redirect()->back()->with('success', 'Produk berhasil ditambahkan!');
     }
+
     // 3. Update Jumlah Keranjang
     public function updateCart(Request $request)
     {
@@ -81,35 +78,56 @@ class TransactionController extends Controller
         if (isset($cart[$id])) {
             unset($cart[$id]);
             session()->put('cart', $cart);
-            return redirect()->back()->with('success', 'Produk berhasil dihapus!');
         }
 
-        return redirect()->back()->with('error', 'Produk tidak ditemukan!');
+        return redirect()->back()->with('success', 'Produk berhasil dihapus dari keranjang!');
     }
 
-    // 5. Simpan Transaksi Pembayaran
-    public function store(Request $request)
+    // 5. Proses Checkout & Potong Stok Otomatis
+    public function checkout(Request $request)
     {
         $cart = session()->get('cart', []);
 
         if (empty($cart)) {
-            return redirect()->back()->with('error', 'Keranjang masih kosong!');
+            return redirect()->back()->with('error', 'Keranjang belanja masih kosong!');
         }
 
-        $totalPrice = array_sum(array_column($cart, 'subtotal'));
+        // Hitung total belanja
+        $totalPrice = 0;
+        foreach ($cart as $item) {
+            $totalPrice += $item['price'] * $item['quantity'];
+        }
+
         $payAmount = $request->pay_amount;
 
         if ($payAmount < $totalPrice) {
-            return redirect()->back()->with('error', 'Uang bayar kurang!');
+            return redirect()->back()->with('error', 'Uang bayar kurang dari total belanja!');
         }
 
+        // Cek kecukupan stok sebelum diproses
+        foreach ($cart as $id => $item) {
+            $product = Product::find($id);
+            if (!$product || $product->stok < $item['quantity']) {
+                return redirect()->back()->with('error', "Stok '{$item['name']}' tidak mencukupi! Sisa stok: " . ($product->stok ?? 0));
+            }
+        }
+
+        // Simpan data transaksi utama
         $transaction = Transaction::create([
-            'invoice_number' => 'INV-' . time(),
             'total_price'   => $totalPrice,
-            'pay_amount'     => $payAmount,
-            'return_amount'  => $payAmount - $totalPrice,
+            'pay_amount'    => $payAmount,
+            'return_amount' => $payAmount - $totalPrice,
         ]);
 
+        // Potong stok produk otomatis di database
+        foreach ($cart as $id => $item) {
+            $product = Product::find($id);
+            if ($product) {
+                $product->decrement('stok', $item['quantity']);
+            }
+        }
+
+        // Bersihkan keranjang belanja
         session()->forget('cart');
 
         return redirect()->route('kasir.index')->with('transaksi_sukses', [
@@ -120,27 +138,25 @@ class TransactionController extends Controller
         ]);
     }
 
-    // 6. Cetak Struk Transaksi
+    // 6. Cetak Struk
     public function print($id)
     {
         $transaction = Transaction::findOrFail($id);
-
         return view('kasir.print', compact('transaction'));
     }
 
-    // 7. Laporan Penjualan
+    // 7. Halaman Laporan Penjualan
     public function report(Request $request)
     {
         $startDate = $request->input('start_date', date('Y-m-01'));
         $endDate = $request->input('end_date', date('Y-m-d'));
 
-        $transactions = Transaction::whereDate('created_at', '>=', $startDate)
-            ->whereDate('created_at', '<=', $endDate)
+        $transactions = Transaction::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->latest()
             ->get();
 
         $totalIncome = $transactions->sum('total_price');
 
-        return view('laporan.index', compact('transactions', 'startDate', 'endDate', 'totalIncome'));
+        return view('laporan.index', compact('transactions', 'totalIncome', 'startDate', 'endDate'));
     }
 }

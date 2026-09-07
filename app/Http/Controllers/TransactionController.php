@@ -2,49 +2,68 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Transaction;
 
 class TransactionController extends Controller
 {
-    // 1. Tampilan Halaman Kasir
+    // 1. Tampilan Halaman Kasir (Kirim $products ke Blade)
     public function index()
     {
+        $products = Product::all(); // Ambil semua data produk dari DB
         $cart = session()->get('cart', []);
         $total = array_sum(array_column($cart, 'subtotal'));
 
-        return view('kasir.index', compact('cart', 'total'));
+        return view('kasir.index', compact('products', 'cart', 'total'));
     }
 
-    // 2. Tambah Produk ke Keranjang
+    // 2. Tambah Produk ke Keranjang (Support ID, Barcode, Code, & Multi-Kolom Harga)
+    // 2. Tambah Produk ke Keranjang (Aman dari error kolom database)
     public function addProduct(Request $request)
     {
-        $product = Product::where('code', $request->code)
-            ->orWhere('id', $request->code)
-            ->first();
+        $code = $request->code;
+
+        // Mulai pencarian dari ID
+        $query = Product::where('id', $code);
+
+        // Cek apakah kolom 'code' ada di tabel 'products'
+        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'code')) {
+            $query->orWhere('code', $code);
+        }
+
+        // Cek apakah kolom 'barcode' ada di tabel 'products'
+        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'barcode')) {
+            $query->orWhere('barcode', $code);
+        }
+
+        $product = $query->first();
 
         if (!$product) {
-            return redirect()->back()->with('error', 'Produk tidak ditemukan!');
+            return redirect()->back()->with('error', 'Produk dengan kode/ID "' . $code . '" tidak ditemukan!');
         }
+
+        // Ambil harga barang
+        $price = $product->selling_price ?? $product->price ?? $product->harga ?? 0;
 
         $cart = session()->get('cart', []);
 
         if (isset($cart[$product->id])) {
             $cart[$product->id]['quantity']++;
-            $cart[$product->id]['subtotal'] = $cart[$product->id]['quantity'] * $product->selling_price;
+            $cart[$product->id]['subtotal'] = $cart[$product->id]['quantity'] * $price;
         } else {
             $cart[$product->id] = [
                 'name'     => $product->name,
-                'price'    => $product->selling_price,
+                'price'    => $price,
                 'quantity' => 1,
-                'subtotal' => $product->selling_price,
+                'subtotal' => $price,
             ];
         }
 
         session()->put('cart', $cart);
 
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'Produk ' . $product->name . ' berhasil ditambahkan!');
     }
 
     // 3. Update Jumlah Keranjang
@@ -161,10 +180,20 @@ class TransactionController extends Controller
         return view('laporan.index', compact('transactions', 'totalIncome', 'startDate', 'endDate'));
     }
 
-
     public function reportDetail($id)
+    {
+        $transaction = Transaction::with(['details.product'])->findOrFail($id);
+        return view('laporan.detail', compact('transaction'));
+    }
+
+ // Pastikan Model transaksi di-import di paling atas file
+
+public function history()
 {
-    $transaction = Transaction::with(['details.product'])->findOrFail($id);
-    return view('laporan.detail', compact('transaction'));
+    // Mengambil data transaksi terbaru
+    $penjualan = Transaction::latest()->get(); 
+
+    return view('penjualan.index', compact('penjualan'));
 }
+
 }

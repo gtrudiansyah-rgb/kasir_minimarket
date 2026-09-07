@@ -1,47 +1,47 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Data Supplier</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container py-4">
-    <h2>Data Supplier</h2>
+@extends('layouts.app')
+
+@section('content')
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-3">Data Supplier</h2>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <a href="{{ route('suppliers.create') }}" class="btn btn-primary my-3">Tambah Supplier</a>
+    <a href="{{ route('suppliers.create') }}" class="btn btn-primary mb-3">Tambah Supplier</a>
 
-    <table class="table table-bordered">
+    <table class="table table-bordered bg-white shadow-sm">
         <thead>
             <tr>
-                <th>No</th>
+                <th width="50">No</th>
                 <th>Nama Supplier</th>
-                <th>Aksi</th>
+                <th>Telepon</th>
+                <th>Alamat</th>
+                <th width="180">Aksi</th>
             </tr>
         </thead>
         <tbody>
             @forelse($suppliers as $index => $supplier)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $supplier->name ?? $supplier->name }}</td>
+                    <td>{{ $supplier->nama ?? $supplier->name }}</td>
+                    <td>{{ $supplier->phone ?? $supplier->telepon ?? '-' }}</td>
+                    <td>{{ $supplier->address ?? $supplier->alamat ?? '-' }}</td>
                     <td>
                         <a href="{{ route('suppliers.edit', $supplier->id) }}" class="btn btn-warning btn-sm">Edit</a>
                         <form action="{{ route('suppliers.destroy', $supplier->id) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
-                            <button class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus?')">Hapus</button>
+                            <button class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus supplier ini?')">Hapus</button>
                         </form>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" class="text-center">Belum ada data supplier</td>
+                    <td colspan="5" class="text-center">Belum ada data supplier.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
-</body>
-</html>
+</div>
+@endsection

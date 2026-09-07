@@ -20,15 +20,16 @@
                     <i class="fa-solid font-bold fa-store text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-white text-base tracking-wide">KASIR LARAVEL</h1>
+                    <h1 class="font-bold text-white text-base tracking-wide">KASIR SYAHARUDDINFS</h1>
                     <p class="text-xs text-slate-400">POS System</p>
                 </div>
             </div>
 
             <nav class="p-4 space-y-1 text-sm overflow-y-auto max-h-[calc(100vh-140px)]">
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 transition">
-                    <i class="fa-solid fa-border-all w-5"></i> Dashboard
-                </a>
+                
+                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                  <i class="fa-solid fa-border-all me-2"></i> Dashboard
+               </a>
                 
                 <div class="pt-3 pb-1 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Transaksi</div>
                 <a href="{{ route('kasir.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 text-slate-300 {{ request()->is('kasir*') ? 'bg-indigo-600 text-white' : '' }}">

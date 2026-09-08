@@ -2,9 +2,16 @@
 
 @section('content')
 @php
-    // Hitung total tunai & non-tunai secara fleksibel (mengabaikan huruf besar/kecil)
-    $totalTunai = $transactions->filter(fn($i) => strtolower($i->payment_method ?? $i->metode_bayar ?? 'tunai') === 'tunai')->sum(fn($i) => $i->total_price ?? $i->total_harga ?? 0);
-    $totalNonTunai = $transactions->filter(fn($i) => strtolower($i->payment_method ?? $i->metode_bayar ?? 'tunai') !== 'tunai')->sum(fn($i) => $i->total_price ?? $i->total_harga ?? 0);
+    // Hitung total tunai ('cash' / 'tunai') & non-tunai ('qris')
+    $totalTunai = $transactions->filter(function($i) {
+        $method = strtolower($i->payment_method ?? $i->metode_bayar ?? 'cash');
+        return in_array($method, ['cash', 'tunai']);
+    })->sum(fn($i) => $i->total_price ?? $i->total_harga ?? 0);
+
+    $totalNonTunai = $transactions->filter(function($i) {
+        $method = strtolower($i->payment_method ?? $i->metode_bayar ?? '');
+        return $method === 'qris';
+    })->sum(fn($i) => $i->total_price ?? $i->total_harga ?? 0);
 @endphp
 
 <div class="container-fluid py-4">
@@ -49,7 +56,16 @@
                             <td>{{ $index + 1 }}</td>
                             <td><span class="badge bg-secondary">{{ $item->invoice_number ?? $item->no_faktur }}</span></td>
                             <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i') }}</td>
-                            <td><span class="badge bg-info text-dark">{{ strtoupper($item->payment_method ?? $item->metode_bayar ?? 'TUNAI') }}</span></td>
+                            <td>
+                                @php
+                                    $method = strtolower($item->payment_method ?? $item->metode_bayar ?? 'cash');
+                                @endphp
+                                @if($method === 'qris')
+                                    <span class="badge bg-success">QRIS</span>
+                                @else
+                                    <span class="badge bg-info text-dark">TUNAI</span>
+                                @endif
+                            </td>
                             <td>Rp {{ number_format($item->total_price ?? $item->total_harga ?? 0, 0, ',', '.') }}</td>
                         </tr>
                     @empty

@@ -8,9 +8,14 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <a href="{{ route('products.create') }}" class="btn btn-primary mb-3">Tambah Produk</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ route('products.create') }}" class="btn btn-primary">Tambah Produk</a>
 
-    <table class="table table-bordered bg-white">
+        <!-- Input pencarian tanpa tombol submit/form -->
+        <input type="text" id="searchInput" class="form-control w-25" placeholder="Cari nama produk...">
+    </div>
+
+    <table class="table table-bordered bg-white" id="productTable">
         <thead>
             <tr>
                 <th>No</th>
@@ -44,4 +49,23 @@
         </tbody>
     </table>
 </div>
+
+<!-- Script pencarian langsung (Real-time tanpa reload) -->
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    let keyword = this.value.toLowerCase();
+    let rows = document.querySelectorAll('#productTable tbody tr');
+
+    rows.forEach(row => {
+        // Mengambil teks dari kolom "Nama Produk" (index ke-1)
+        let productName = row.children[1] ? row.children[1].textContent.toLowerCase() : '';
+        
+        if (productName.includes(keyword)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
 @endsection

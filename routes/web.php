@@ -6,6 +6,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BarangMasukController;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -14,6 +15,10 @@ Route::resource('categories', CategoryController::class);
 Route::resource('suppliers', SupplierController::class);
 Route::resource('products', ProductController::class);
 
+// Route Barang Masuk (Restok)
+Route::get('/barang-masuk', [BarangMasukController::class, 'index'])->name('barang-masuk.index');
+Route::post('/barang-masuk', [BarangMasukController::class, 'store'])->name('barang-masuk.store');
+
 // Route Kasir & Keranjang
 Route::get('/kasir', [TransactionController::class, 'index'])->name('kasir.index');
 Route::post('/kasir/add', [TransactionController::class, 'addProduct'])->name('kasir.add');
@@ -21,11 +26,9 @@ Route::post('/kasir/update', [TransactionController::class, 'updateCart'])->name
 Route::post('/kasir/remove/{id}', [TransactionController::class, 'removeCart'])->name('kasir.remove');
 Route::post('/kasir/checkout', [TransactionController::class, 'checkout'])->name('kasir.checkout');
 Route::get('/kasir/print/{id}', [TransactionController::class, 'print'])->name('kasir.print');
+
 // Route Pembayaran
-Route::get('/pembayaran', function () {
-    $transactions = \App\Models\Transaction::latest()->get();
-    return view('pembayaran.index', compact('transactions'));
-})->name('pembayaran.index');
+Route::get('/pembayaran', [TransactionController::class, 'pembayaran'])->name('pembayaran.index');
 
 // Route Penjualan (Riwayat Transaksi)
 Route::get('/penjualan', function () {

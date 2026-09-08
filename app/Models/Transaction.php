@@ -14,6 +14,7 @@ class Transaction extends Model
         'total_price',
         'pay_amount',
         'return_amount',
+        'payment_method', // <-- Ditambahkan di sini
     ];
 
     public function details()

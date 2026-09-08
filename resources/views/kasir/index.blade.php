@@ -54,13 +54,13 @@
     @endif
 
     <div class="row">
-        <!-- KOLOM KIRI: SCAN & DAFTAR PRODUK (Dapat Diklik) -->
+        <!-- KOLOM KIRI: SCAN & DAFTAR PRODUK -->
         <div class="col-md-7">
             <!-- Form Scan Barcode -->
             <form action="{{ route('kasir.add') }}" method="POST" class="mb-4">
                 @csrf
                 <div class="input-group">
-                    <input type="text" name="code" id="barcode" class="form-control" placeholder="Scan Barcode / Ketik Kode Produk..." autofocus required>
+                    <input type="text" name="code" id="barcode" class="form-control" placeholder="Scan Barcode / Ketik Kode Produk..." autofocus required autocomplete="off">
                     <button class="btn btn-primary" type="submit">Tambah</button>
                 </div>
             </form>
@@ -97,7 +97,7 @@
 
         <!-- KOLOM KANAN: TABEL KERANJANG & CHECKOUT -->
         <div class="col-md-5">
-            <div class="card p-3 shadow-sm">
+            <div class="card p-3 shadow-sm border-0">
                 <h5 class="fw-bold mb-3">Keranjang Belanja</h5>
                 
                 <table class="table table-bordered align-middle text-sm">
@@ -152,10 +152,22 @@
 
                         <form action="{{ route('kasir.checkout') }}" method="POST">
                             @csrf
+                            
+                            <!-- Pilihan Metode Pembayaran -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Metode Pembayaran</label>
+                                <select name="payment_method" id="paymentMethod" class="form-select" required>
+                                    <option value="cash" selected>Cash / Tunai</option>
+                                    <option value="qris">QRIS</option>
+                                </select>
+                            </div>
+
+                            <!-- Input Uang Bayar -->
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Uang Bayar (Rp)</label>
-                                <input type="number" name="pay_amount" class="form-control form-control-lg" placeholder="Masukkan nominal" required min="{{ $total }}">
+                                <input type="number" name="pay_amount" id="payAmount" class="form-control form-control-lg" placeholder="Masukkan nominal" required min="{{ $total }}">
                             </div>
+
                             <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">Bayar & Simpan Transaksi</button>
                         </form>
                     </div>
@@ -163,10 +175,82 @@
             </div>
         </div>
     </div>
+
+    <!-- TABEL TRANSAKSI HARI INI (BARU DISEDIAKAN) -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-2 text-primary"></i>Transaksi Hari Ini</span>
+                    <span class="badge bg-primary rounded-pill">{{ isset($todayTransactions) ? count($todayTransactions) : 0 }} Transaksi</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No. Invoice</th>
+                                    <th>Waktu</th>
+                                    <th>Metode Bayar</th>
+                                    <th>Total Belanja</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if(isset($todayTransactions) && count($todayTransactions) > 0)
+                                    @foreach($todayTransactions as $trx)
+                                        <tr>
+                                            <td>
+                                                <span class="fw-bold text-dark">{{ $trx->invoice_number ?? $trx->invoice ?? ('INV-' . $trx->id) }}</span>
+                                            </td>
+                                            <td>{{ $trx->created_at ? $trx->created_at->format('H:i') . ' WIB' : '-' }}</td>
+                                            <td>
+                                                <span class="badge {{ strtolower($trx->payment_method ?? '') === 'qris' ? 'bg-success' : 'bg-info text-dark' }}">
+                                                    {{ strtoupper($trx->payment_method ?? 'CASH') }}
+                                                </span>
+                                            </td>
+                                            <td class="fw-bold text-primary">Rp {{ number_format($trx->total_price ?? $trx->total ?? 0, 0, ',', '.') }}</td>
+                                            <td class="text-center">
+                                                <a href="{{ route('kasir.print', $trx->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                    🖨️ Struk
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">Belum ada transaksi untuk hari ini.</td>
+                                    </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     document.getElementById('barcode').focus();
+
+    // Jalankan logika pilihan metode pembayaran
+    const paymentMethod = document.getElementById('paymentMethod');
+    const payAmount = document.getElementById('payAmount');
+    const totalAmount = {{ $total ?? 0 }};
+
+    if (paymentMethod) {
+        paymentMethod.addEventListener('change', function() {
+            if (this.value === 'qris') {
+                payAmount.value = totalAmount;
+                payAmount.readOnly = true;
+            } else {
+                payAmount.value = '';
+                payAmount.readOnly = false;
+                payAmount.focus();
+            }
+        });
+    }
 </script>
 
 @if(session('print_id'))

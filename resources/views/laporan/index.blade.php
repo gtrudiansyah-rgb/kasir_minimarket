@@ -35,6 +35,7 @@
                     <th>No</th>
                     <th>No. Faktur</th>
                     <th>Tanggal & Waktu</th>
+                    <th>Metode Bayar</th>
                     <th>Total Belanja</th>
                     <th>Uang Bayar</th>
                     <th>Kembalian</th>
@@ -47,19 +48,26 @@
                         <td>{{ $index + 1 }}</td>
                         <td><strong>{{ $trx->invoice_number ?? 'INV-'.$trx->id }}</strong></td>
                         <td>{{ $trx->created_at->format('d/m/Y H:i') }}</td>
+                        <td>
+                            @if(strtolower($trx->payment_method ?? 'cash') == 'qris')
+                                <span class="badge bg-success">QRIS</span>
+                            @else
+                                <span class="badge bg-info text-white">TUNAI</span>
+                            @endif
+                        </td>
                         <td>Rp {{ number_format($trx->total_price) }}</td>
                         <td>Rp {{ number_format($trx->pay_amount) }}</td>
                         <td>Rp {{ number_format($trx->return_amount) }}</td>
-                       <td class="text-center">
-    <a href="{{ route('laporan.detail', $trx->id) }}" class="btn btn-sm btn-info text-white">Detail</a>
-    <a href="{{ route('kasir.print', $trx->id) }}" target="_blank" class="btn btn-sm btn-secondary">
-        🖨️ Cetak Struk
-    </a>
-</td>
+                        <td class="text-center">
+                            <a href="{{ route('laporan.detail', $trx->id) }}" class="btn btn-sm btn-info text-white">Detail</a>
+                            <a href="{{ route('kasir.print', $trx->id) }}" target="_blank" class="btn btn-sm btn-secondary">
+                                🖨️ Cetak Struk
+                            </a>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted">Tidak ada data transaksi pada periode tanggal ini.</td>
+                        <td colspan="8" class="text-center text-muted">Tidak ada data transaksi pada periode tanggal ini.</td>
                     </tr>
                 @endforelse
             </tbody>

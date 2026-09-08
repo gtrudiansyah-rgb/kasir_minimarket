@@ -26,15 +26,17 @@ class DashboardController extends Controller
             return $stok <= 5;
         });
 
-        // 3. Data Diagram Bulat (Tunai vs Non-Tunai)
+        // 3. Data Diagram Bulat (Tunai vs Non-Tunai / QRIS)
         $allTransactions = Transaction::all();
         
         $totalTunai = $allTransactions->filter(function($i) {
-            return strtolower($i->payment_method ?? $i->metode_bayar ?? 'tunai') === 'tunai';
+            $method = strtolower($i->payment_method ?? $i->metode_bayar ?? 'cash');
+            return in_array($method, ['cash', 'tunai']);
         })->sum(fn($i) => $i->total_price ?? $i->total_harga ?? 0);
 
         $totalNonTunai = $allTransactions->filter(function($i) {
-            return strtolower($i->payment_method ?? $i->metode_bayar ?? 'tunai') !== 'tunai';
+            $method = strtolower($i->payment_method ?? $i->metode_bayar ?? '');
+            return $method === 'qris';
         })->sum(fn($i) => $i->total_price ?? $i->total_harga ?? 0);
 
         // 4. Transaksi Terbaru

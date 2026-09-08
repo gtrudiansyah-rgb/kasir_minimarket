@@ -2,25 +2,30 @@
 
 namespace App\Http\Controllers;
 
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Transaction;
+use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
-    // 1. Tampilan Halaman Kasir (Kirim $products ke Blade)
+    // 1. Tampilan Halaman Kasir (Kirim $products & $todayTransactions ke Blade)
     public function index()
     {
-        $products = Product::all(); // Ambil semua data produk dari DB
+        $products = Product::all();
         $cart = session()->get('cart', []);
         $total = array_sum(array_column($cart, 'subtotal'));
 
-        return view('kasir.index', compact('products', 'cart', 'total'));
+        // Mengambil transaksi khusus HARI INI untuk tabel kasir
+        $todayTransactions = Transaction::whereDate('created_at', Carbon::today())
+            ->latest()
+            ->get();
+
+        return view('kasir.index', compact('products', 'cart', 'total', 'todayTransactions'));
     }
 
     // 2. Tambah Produk ke Keranjang (Support ID, Barcode, Code, & Multi-Kolom Harga)
-    // 2. Tambah Produk ke Keranjang (Aman dari error kolom database)
     public function addProduct(Request $request)
     {
         $code = $request->code;
@@ -131,12 +136,16 @@ class TransactionController extends Controller
             }
         }
 
+        // Tangkap metode pembayaran (cash/qris), default 'cash'
+        $paymentMethod = $request->input('payment_method', 'cash');
+
         // Simpan data transaksi utama ke database
         $transaction = Transaction::create([
             'invoice_number' => 'INV-' . date('YmdHis'),
             'total_price'    => $totalPrice,
             'pay_amount'     => $payAmount,
             'return_amount'  => $payAmount - $totalPrice,
+            'payment_method' => $paymentMethod,
         ]);
 
         // Potong stok produk otomatis di database
@@ -165,9 +174,13 @@ class TransactionController extends Controller
         return view('kasir.print', compact('transaction'));
     }
 
-    // 7. Halaman Laporan Penjualan
+    // 7. Halaman Laporan Penjualan (Khusus Admin)
     public function report(Request $request)
     {
+        if (auth()->check() && strtolower(auth()->user()->role) === 'kasir') {
+            return redirect()->route('kasir.index')->with('error', 'Akses ditolak! Halaman ini khusus Admin.');
+        }
+
         $startDate = $request->input('start_date', date('Y-m-01'));
         $endDate = $request->input('end_date', date('Y-m-d'));
 
@@ -186,14 +199,36 @@ class TransactionController extends Controller
         return view('laporan.detail', compact('transaction'));
     }
 
- // Pastikan Model transaksi di-import di paling atas file
+    // 8. Halaman Riwayat Penjualan (Kasir hanya melihat hari ini, Admin melihat semua)
+    public function history()
+    {
+        $query = Transaction::latest();
 
-public function history()
-{
-    // Mengambil data transaksi terbaru
-    $penjualan = Transaction::latest()->get(); 
+        // Jika role Kasir, filter transaksi HARI INI saja
+        if (auth()->check() && strtolower(auth()->user()->role) === 'kasir') {
+            $query->whereDate('created_at', Carbon::today());
+        }
 
-    return view('penjualan.index', compact('penjualan'));
-}
+        $penjualan = $query->get(); 
+        return view('penjualan.index', compact('penjualan'));
+    }
 
+    // 9. Halaman Data & Metode Pembayaran (Khusus Admin)
+    public function pembayaran()
+    {
+        // Blokir akses jika user bertindak sebagai Kasir
+        if (auth()->check() && strtolower(auth()->user()->role) === 'kasir') {
+            return redirect()->route('kasir.index')->with('error', 'Akses ditolak! Halaman ini khusus Admin.');
+        }
+
+        $transactions = Transaction::latest()->get();
+
+        // Menghitung total transaksi tunai (mencakup 'cash' dan 'tunai')
+        $totalTunai = Transaction::whereIn(DB::raw('LOWER(payment_method)'), ['cash', 'tunai'])->sum('total_price');
+
+        // Menghitung total transaksi QRIS
+        $totalQris = Transaction::where(DB::raw('LOWER(payment_method)'), 'qris')->sum('total_price');
+
+        return view('pembayaran.index', compact('transactions', 'totalTunai', 'totalQris'));
+    }
 }

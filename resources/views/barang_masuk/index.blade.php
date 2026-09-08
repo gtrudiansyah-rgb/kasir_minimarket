@@ -73,16 +73,31 @@
         <!-- TABEL RIWAYAT BARANG MASUK -->
         <div class="col-md-8">
             <div class="card border-0 shadow-sm rounded-lg">
-                <div class="card-header bg-white font-bold py-3 text-slate-800">
-                    <i class="fa-solid fa-clock-rotate-left me-1"></i> Riwayat Penerimaan Barang
+                <div class="card-header bg-white font-bold py-3 text-slate-800 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Riwayat Penerimaan Barang
+                    </div>
+                    
+                    <!-- INPUT PENCARIAN & FILTER TANGGAL -->
+                    <form action="{{ route('barang-masuk.index') }}" method="GET" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari supplier / produk..." value="{{ request('search') }}">
+                        <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ request('tanggal') }}">
+                        <button type="submit" class="btn btn-sm btn-primary bg-indigo-600 border-0">
+                            <i class="fa-solid fa-magnifying-glass"></i> Cari
+                        </button>
+                        @if(request('search') || request('tanggal'))
+                            <a href="{{ route('barang-masuk.index') }}" class="btn btn-sm btn-secondary">Reset</a>
+                        @endif
+                    </form>
                 </div>
+
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-slate-50 text-slate-600">
                                 <tr>
                                     <th class="px-3 py-2">No</th>
-                                    <th class="px-3 py-2">Tanggal</th>
+                                    <th class="px-3 py-2">Hari, Tanggal</th>
                                     <th class="px-3 py-2">Supplier</th>
                                     <th class="px-3 py-2">Produk</th>
                                     <th class="px-3 py-2">Jumlah</th>
@@ -90,25 +105,27 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($barangMasuk as $index => $item)
-                                    <tr>
-                                        <td class="px-3 py-2">{{ $index + 1 }}</td>
-                                        <td class="px-3 py-2">{{ \Carbon\Carbon::parse($item->tanggal_masuk)->format('d/m/Y') }}</td>
-                                        <td class="px-3 py-2 font-semibold text-slate-700">
-                                            {{ $item->supplier->name ?? $item->supplier->nama_supplier ?? $item->supplier->nama ?? '-' }}
-                                        </td>
-                                        <td class="px-3 py-2">{{ $item->product->name ?? $item->product->nama_produk ?? '-' }}</td>
-                                        <td class="px-3 py-2">
-                                            <span class="badge bg-success">+{{ $item->jumlah }}</span>
-                                        </td>
-                                        <td class="px-3 py-2 text-slate-500">{{ $item->catatan ?? '-' }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-slate-400">Belum ada riwayat barang masuk.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
+    @forelse($barangMasuk as $index => $item)
+        <tr>
+            <td class="px-3 py-2">{{ $index + 1 }}</td>
+            <td class="px-3 py-2">
+                {{ \Carbon\Carbon::parse($item->tanggal_masuk)->locale('id')->isoFormat('dddd, DD/MM/YYYY') }}
+            </td>
+            <td class="px-3 py-2 font-semibold text-slate-700">
+                {{ $item->supplier->name ?? $item->supplier->nama_supplier ?? $item->supplier->nama ?? '-' }}
+            </td>
+            <td class="px-3 py-2">{{ $item->product->name ?? $item->product->nama_produk ?? '-' }}</td>
+            <td class="px-3 py-2">
+                <span class="badge bg-success">+{{ $item->jumlah }}</span>
+            </td>
+            <td class="px-3 py-2 text-slate-500">{{ $item->catatan ?? '-' }}</td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" class="text-center py-4 text-slate-400">Belum ada riwayat barang masuk.</td>
+        </tr>
+    @endforelse
+</tbody>
                         </table>
                     </div>
                 </div>

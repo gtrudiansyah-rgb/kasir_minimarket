@@ -6,12 +6,47 @@ use App\Models\BarangMasuk;
 use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class BarangMasukController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $barangMasuk = BarangMasuk::with(['supplier', 'product'])->latest()->get();
+        $query = BarangMasuk::with(['supplier', 'product']);
+
+        // Filter Pencarian Keyword (Otomatis mendeteksi struktur kolom database)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                // Pencarian Supplier
+                $q->whereHas('supplier', function ($s) use ($search) {
+                    $supplierCols = array_filter(['name', 'nama', 'nama_supplier'], fn($col) => Schema::hasColumn('suppliers', $col));
+                    $s->where(function ($sub) use ($search, $supplierCols) {
+                        foreach ($supplierCols as $col) {
+                            $sub->orWhere($col, 'like', "%{$search}%");
+                        }
+                    });
+                })
+                // Pencarian Produk
+                ->orWhereHas('product', function ($p) use ($search) {
+                    $productCols = array_filter(['name', 'nama_produk', 'nama'], fn($col) => Schema::hasColumn('products', $col));
+                    $p->where(function ($sub) use ($search, $productCols) {
+                        foreach ($productCols as $col) {
+                            $sub->orWhere($col, 'like', "%{$search}%");
+                        }
+                    });
+                })
+                // Pencarian Catatan
+                ->orWhere('catatan', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter Berdasarkan Tanggal
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal_masuk', $request->tanggal);
+        }
+
+        $barangMasuk = $query->latest()->get();
         $products = Product::all();
         $suppliers = Supplier::all();
 

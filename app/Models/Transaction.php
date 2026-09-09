@@ -9,14 +9,15 @@ class Transaction extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'invoice_number',
-        'total_price',
-        'pay_amount',
-        'return_amount',
-        'payment_method', // <-- Ditambahkan di sini
-    ];
+    // Mengizinkan seluruh kolom diisi secara fleksibel
+    protected $guarded = [];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Relasi ke detail transaksi (menyelesaikan Error 500)
     public function details()
     {
         return $this->hasMany(TransactionDetail::class);

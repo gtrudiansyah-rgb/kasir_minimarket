@@ -9,26 +9,18 @@ class BarangMasuk extends Model
 {
     use HasFactory;
 
-    // Nama tabel sesuai di HeidiSQL
-    protected $table = 'barang_masuks';
+    // Izinkan semua kolom diisi
+    protected $guarded = [];
 
-    // Tambahkan kolom yang boleh diisi secara massal
-    protected $fillable = [
-        'product_id',
-        'supplier_id',
-        'jumlah',
-        'tanggal_masuk',
-    ];
-
-    // Relasi ke Model Product
+    // Relasi ke Product
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
-    // Relasi ke Model Supplier
+    // Relasi ke Supplier
     public function supplier()
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 }

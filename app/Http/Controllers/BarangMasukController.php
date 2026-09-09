@@ -1,83 +1,87 @@
 <?php
-
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\BarangMasuk;
 use App\Models\Product;
 use App\Models\Supplier;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Exception;
 
 class BarangMasukController extends Controller
 {
     public function index(Request $request)
     {
-        $query = BarangMasuk::with(['supplier', 'product']);
-
-        // Filter Pencarian Keyword (Otomatis mendeteksi struktur kolom database)
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                // Pencarian Supplier
-                $q->whereHas('supplier', function ($s) use ($search) {
-                    $supplierCols = array_filter(['name', 'nama', 'nama_supplier'], fn($col) => Schema::hasColumn('suppliers', $col));
-                    $s->where(function ($sub) use ($search, $supplierCols) {
-                        foreach ($supplierCols as $col) {
-                            $sub->orWhere($col, 'like', "%{$search}%");
-                        }
-                    });
-                })
-                // Pencarian Produk
-                ->orWhereHas('product', function ($p) use ($search) {
-                    $productCols = array_filter(['name', 'nama_produk', 'nama'], fn($col) => Schema::hasColumn('products', $col));
-                    $p->where(function ($sub) use ($search, $productCols) {
-                        foreach ($productCols as $col) {
-                            $sub->orWhere($col, 'like', "%{$search}%");
-                        }
-                    });
-                })
-                // Pencarian Catatan
-                ->orWhere('catatan', 'like', "%{$search}%");
-            });
-        }
-
-        // Filter Berdasarkan Tanggal
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal_masuk', $request->tanggal);
-        }
-
-        $barangMasuk = $query->latest()->get();
-        $products = Product::all();
         $suppliers = Supplier::all();
+        $products = Product::all();
 
-        return view('barang_masuk.index', compact('barangMasuk', 'products', 'suppliers'));
+        $query = BarangMasuk::query();
+
+        // Muat relasi jika ada
+        if (method_exists(BarangMasuk::class, 'product')) {
+            $query->with('product');
+        }
+        if (method_exists(BarangMasuk::class, 'supplier')) {
+            $query->with('supplier');
+        }
+
+        $barangMasuk = $query->orderBy('id', 'desc')->get();
+
+        return view('barang_masuk.index', compact('suppliers', 'products', 'barangMasuk'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'supplier_id'   => 'required',
-            'product_id'    => 'required',
-            'jumlah'        => 'required|numeric|min:1',
-            'tanggal_masuk' => 'required|date',
+            'product_id' => 'required',
+            'quantity'   => 'required|numeric|min:1',
         ]);
 
-        BarangMasuk::create([
-            'supplier_id'   => $request->supplier_id,
-            'product_id'    => $request->product_id,
-            'jumlah'        => $request->jumlah,
-            'tanggal_masuk' => $request->tanggal_masuk,
-            'catatan'       => $request->catatan,
-        ]);
+        try {
+            $bm = new BarangMasuk();
+            $bm->product_id = $request->product_id;
 
-        $product = Product::findOrFail($request->product_id);
-        
-        if (isset($product->stock)) {
-            $product->increment('stock', $request->jumlah);
-        } else {
-            $product->increment('stok', $request->jumlah);
+            if ($request->filled('supplier_id')) {
+                $bm->supplier_id = $request->supplier_id;
+            }
+
+            // Isi kolom jumlah/quantity
+            if (Schema::hasColumn('barang_masuks', 'quantity')) {
+                $bm->quantity = $request->quantity;
+            }
+            if (Schema::hasColumn('barang_masuks', 'jumlah')) {
+                $bm->jumlah = $request->quantity;
+            }
+
+            // Isi kolom tanggal
+            if (Schema::hasColumn('barang_masuks', 'tanggal_masuk')) {
+                $bm->tanggal_masuk = $request->tanggal_masuk ?? now();
+            }
+            if (Schema::hasColumn('barang_masuks', 'date')) {
+                $bm->date = $request->tanggal_masuk ?? now();
+            }
+
+            // Isi catatan
+            if (Schema::hasColumn('barang_masuks', 'catatan')) {
+                $bm->catatan = $request->catatan;
+            }
+
+            $bm->save();
+
+            // Update stok produk
+            $product = Product::find($request->product_id);
+            if ($product) {
+                if (Schema::hasColumn('products', 'stock')) {
+                    $product->increment('stock', $request->quantity);
+                } elseif (Schema::hasColumn('products', 'stok')) {
+                    $product->increment('stok', $request->quantity);
+                }
+            }
+
+            return redirect()->back()->with('success', 'Stok barang masuk berhasil ditambahkan!');
+
+        } catch (Exception $e) {
+            return redirect()->back()->withErrors(['db_error' => 'Error Database: ' . $e->getMessage()])->withInput();
         }
-
-        return redirect()->back()->with('success', 'Stok produk berhasil ditambahkan!');
     }
 }

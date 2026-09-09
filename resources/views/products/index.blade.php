@@ -11,7 +11,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <a href="{{ route('products.create') }}" class="btn btn-primary">Tambah Produk</a>
 
-        <!-- Input pencarian tanpa tombol submit/form -->
+        
         <input type="text" id="searchInput" class="form-control w-25" placeholder="Cari nama produk...">
     </div>
 
@@ -50,7 +50,7 @@
     </table>
 </div>
 
-<!-- Script pencarian langsung (Real-time tanpa reload) -->
+
 <script>
 document.getElementById('searchInput').addEventListener('keyup', function() {
     let keyword = this.value.toLowerCase();

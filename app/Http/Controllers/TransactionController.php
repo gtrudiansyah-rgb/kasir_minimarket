@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\TransactionDetail;
 use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
-    // 1. Tampilan Halaman Kasir (Kirim $products & $todayTransactions ke Blade)
+    // 1. Tampilan Halaman Kasir
     public function index()
     {
         $products = Product::all();
@@ -25,7 +27,7 @@ class TransactionController extends Controller
         return view('kasir.index', compact('products', 'cart', 'total', 'todayTransactions'));
     }
 
-    // 2. Tambah Produk ke Keranjang (Support ID, Barcode, Code, & Multi-Kolom Harga)
+    // 2. Tambah Produk ke Keranjang
     public function addProduct(Request $request)
     {
         $code = $request->code;
@@ -34,12 +36,12 @@ class TransactionController extends Controller
         $query = Product::where('id', $code);
 
         // Cek apakah kolom 'code' ada di tabel 'products'
-        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'code')) {
+        if (Schema::hasColumn('products', 'code')) {
             $query->orWhere('code', $code);
         }
 
         // Cek apakah kolom 'barcode' ada di tabel 'products'
-        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'barcode')) {
+        if (Schema::hasColumn('products', 'barcode')) {
             $query->orWhere('barcode', $code);
         }
 
@@ -136,23 +138,44 @@ class TransactionController extends Controller
             }
         }
 
-        // Tangkap metode pembayaran (cash/qris), default 'cash'
         $paymentMethod = $request->input('payment_method', 'cash');
 
-        // Simpan data transaksi utama ke database
-        $transaction = Transaction::create([
+        // Susun payload transaksi
+        $transactionData = [
             'invoice_number' => 'INV-' . date('YmdHis'),
             'total_price'    => $totalPrice,
             'pay_amount'     => $payAmount,
             'return_amount'  => $payAmount - $totalPrice,
             'payment_method' => $paymentMethod,
-        ]);
+        ];
 
-        // Potong stok produk otomatis di database
+        // Memasukkan ID user jika kolom user_id tersedia di tabel transactions
+        if (Schema::hasColumn('transactions', 'user_id')) {
+            $transactionData['user_id'] = auth()->id();
+        }
+
+        // Simpan data transaksi utama ke database
+        $transaction = Transaction::create($transactionData);
+
+        // Simpan item belanja ke detail transaksi & potong stok produk
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
             if ($product) {
+                // Potong stok
                 $product->decrement('stock', $item['quantity']);
+
+                // Simpan detail transaksi jika tabel/model TransactionDetail tersedia
+                if (class_exists('App\Models\TransactionDetail') || Schema::hasTable('transaction_details')) {
+                    DB::table('transaction_details')->insert([
+                        'transaction_id' => $transaction->id,
+                        'product_id'     => $id,
+                        'quantity'       => $item['quantity'],
+                        'price'          => $item['price'],
+                        'subtotal'       => $item['subtotal'],
+                        'created_at'     => now(),
+                        'updated_at'     => now(),
+                    ]);
+                }
             }
         }
 
@@ -170,11 +193,12 @@ class TransactionController extends Controller
     // 6. Cetak Struk
     public function print($id)
     {
-        $transaction = Transaction::findOrFail($id);
+        // Memuat relasi details dan product agar tidak error di view
+        $transaction = Transaction::with(['details.product', 'user'])->findOrFail($id);
         return view('kasir.print', compact('transaction'));
     }
 
-    // 7. Halaman Laporan Penjualan (Khusus Admin)
+    // 7. Halaman Laporan Penjualan (Khusus Admin/Super Admin)
     public function report(Request $request)
     {
         if (auth()->check() && strtolower(auth()->user()->role) === 'kasir') {
@@ -199,7 +223,7 @@ class TransactionController extends Controller
         return view('laporan.detail', compact('transaction'));
     }
 
-    // 8. Halaman Riwayat Penjualan (Kasir hanya melihat hari ini, Admin melihat semua)
+    // 8. Halaman Riwayat Penjualan
     public function history()
     {
         $query = Transaction::latest();
@@ -213,20 +237,16 @@ class TransactionController extends Controller
         return view('penjualan.index', compact('penjualan'));
     }
 
-    // 9. Halaman Data & Metode Pembayaran (Khusus Admin)
+    // 9. Halaman Data & Metode Pembayaran
     public function pembayaran()
     {
-        // Blokir akses jika user bertindak sebagai Kasir
         if (auth()->check() && strtolower(auth()->user()->role) === 'kasir') {
             return redirect()->route('kasir.index')->with('error', 'Akses ditolak! Halaman ini khusus Admin.');
         }
 
         $transactions = Transaction::latest()->get();
 
-        // Menghitung total transaksi tunai (mencakup 'cash' dan 'tunai')
         $totalTunai = Transaction::whereIn(DB::raw('LOWER(payment_method)'), ['cash', 'tunai'])->sum('total_price');
-
-        // Menghitung total transaksi QRIS
         $totalQris = Transaction::where(DB::raw('LOWER(payment_method)'), 'qris')->sum('total_price');
 
         return view('pembayaran.index', compact('transactions', 'totalTunai', 'totalQris'));

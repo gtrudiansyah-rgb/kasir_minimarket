@@ -26,7 +26,7 @@
 <body onload="window.print()">
 
     <div class="text-center">
-        <h3 style="margin:0;">TOKO KASIR</h3>
+        <h3 style="margin:0;">TOKO SYAHRUDDIN</h3>
         <p style="margin:2px 0;">Jl. Contoh No. 123</p>
         <p style="margin:2px 0;">Telp: 0812-3456-7890</p>
     </div>

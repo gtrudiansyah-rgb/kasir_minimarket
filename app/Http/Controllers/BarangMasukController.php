@@ -17,7 +17,7 @@ class BarangMasukController extends Controller
 
         $query = BarangMasuk::query();
 
-        // Muat relasi jika ada
+         
         if (method_exists(BarangMasuk::class, 'product')) {
             $query->with('product');
         }
@@ -45,7 +45,7 @@ class BarangMasukController extends Controller
                 $bm->supplier_id = $request->supplier_id;
             }
 
-            // Isi kolom jumlah/quantity
+             
             if (Schema::hasColumn('barang_masuks', 'quantity')) {
                 $bm->quantity = $request->quantity;
             }
@@ -53,7 +53,7 @@ class BarangMasukController extends Controller
                 $bm->jumlah = $request->quantity;
             }
 
-            // Isi kolom tanggal
+             
             if (Schema::hasColumn('barang_masuks', 'tanggal_masuk')) {
                 $bm->tanggal_masuk = $request->tanggal_masuk ?? now();
             }
@@ -61,14 +61,14 @@ class BarangMasukController extends Controller
                 $bm->date = $request->tanggal_masuk ?? now();
             }
 
-            // Isi catatan
+        
             if (Schema::hasColumn('barang_masuks', 'catatan')) {
                 $bm->catatan = $request->catatan;
             }
 
             $bm->save();
 
-            // Update stok produk
+             
             $product = Product::find($request->product_id);
             if ($product) {
                 if (Schema::hasColumn('products', 'stock')) {

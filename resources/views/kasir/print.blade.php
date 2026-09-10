@@ -25,10 +25,15 @@
 </head>
 <body onload="window.print()">
 
+    @php
+        $setting = \App\Models\Setting::first();
+    @endphp
+
+    <!-- Header Toko Otomatis dari Database Setting -->
     <div class="text-center">
-        <h3 style="margin:0;">TOKO SYAHRUDDIN</h3>
-        <p style="margin:2px 0;">Jl. Contoh No. 123</p>
-        <p style="margin:2px 0;">Telp: 0812-3456-7890</p>
+        <h3 style="margin:0; text-transform: uppercase;">{{ $setting->nama_toko ?? 'TOKO KASIR' }}</h3>
+        <p style="margin:2px 0;">{{ $setting->alamat ?? 'Alamat belum diatur' }}</p>
+        <p style="margin:2px 0;">Telp: {{ $setting->no_hp ?? '-' }}</p>
     </div>
 
     <div class="line"></div>
@@ -52,8 +57,8 @@
                 <td colspan="2"><strong>{{ $detail->product->name ?? 'Produk Dihapus' }}</strong></td>
             </tr>
             <tr>
-                <td>{{ $detail->quantity }} x Rp {{ number_format($detail->price) }}</td>
-                <td class="text-right">Rp {{ number_format($detail->subtotal) }}</td>
+                <td>{{ $detail->quantity }} x Rp {{ number_format($detail->price, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
             </tr>
         @endforeach
     </table>
@@ -63,15 +68,15 @@
     <table>
         <tr>
             <td><strong>Total</strong></td>
-            <td class="text-right"><strong>Rp {{ number_format($transaction->total_price) }}</strong></td>
+            <td class="text-right"><strong>Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</strong></td>
         </tr>
         <tr>
             <td>Bayar</td>
-            <td class="text-right">Rp {{ number_format($transaction->pay_amount) }}</td>
+            <td class="text-right">Rp {{ number_format($transaction->pay_amount, 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td>Kembali</td>
-            <td class="text-right">Rp {{ number_format($transaction->return_amount) }}</td>
+            <td class="text-right">Rp {{ number_format($transaction->return_amount, 0, ',', '.') }}</td>
         </tr>
     </table>
 

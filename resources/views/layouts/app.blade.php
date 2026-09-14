@@ -100,9 +100,12 @@
             <!-- KELOMPOK PENGATURAN -->
             <div class="pt-3 pb-1 px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pengaturan</div>
             
+            {{-- Menu Profil Saya disembunyikan untuk Super Admin --}}
+            @if(!$isSuperAdmin)
             <a href="{{ route('profile.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition {{ request()->routeIs('profile*') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300' }}">
                 <i class="fa-solid fa-user-gear w-5"></i> Profil Saya
             </a>
+            @endif
 
             @if($isSuperAdmin)
             <a href="{{ route('settings.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition {{ request()->is('settings*') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300' }}">
@@ -112,21 +115,37 @@
             <a href="{{ route('users.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition {{ request()->is('users*') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300' }}">
                 <i class="fa-solid fa-users-gear w-5"></i> Kelola User
             </a>
+               <a href="{{ route('settings.language') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition {{ request()->is('language*') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300' }}">
+                <i class="fa-solid fa-language w-5"></i>  Bahasa
+               </a>
+            
             @endif
 
         </nav>
 
         <!-- Profil User & Logout -->
         <div class="p-4 border-t border-slate-800 flex items-center justify-between flex-shrink-0 bg-slate-900">
-            <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0 flex-1 group hover:opacity-90 transition" title="Lihat & Edit Profil Saya">
-                <div class="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-white flex-shrink-0 group-hover:bg-indigo-600 transition">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+            @if(!$isSuperAdmin)
+                <!-- Jika bukan super admin, bagian bawah bisa diklik ke profil -->
+                <a href="{{ route('profile.index') }}" class="flex items-center gap-3 min-w-0 flex-1 group hover:opacity-90 transition" title="Lihat & Edit Profil Saya">
+                    <div class="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-white flex-shrink-0 group-hover:bg-indigo-600 transition">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
+                    <div class="truncate">
+                        <p class="text-sm font-semibold text-white leading-tight truncate group-hover:text-indigo-300 transition">{{ auth()->user()->name ?? 'User' }}</p>
+                    </div>
+                </a>
+            @else
+                <!-- Jika super admin, tampilkan nama saja tanpa link menuju profil -->
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <div class="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-white flex-shrink-0">
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
+                    <div class="truncate">
+                        <p class="text-sm font-semibold text-white leading-tight truncate">{{ auth()->user()->name ?? 'User' }}</p>
+                    </div>
                 </div>
-                <div class="truncate">
-                    <p class="text-sm font-semibold text-white leading-tight truncate group-hover:text-indigo-300 transition">{{ auth()->user()->name ?? 'User' }}</p>
-                    
-                </div>
-            </a>
+            @endif
 
             <form action="{{ route('logout') }}" method="POST" class="inline ml-2">
                 @csrf

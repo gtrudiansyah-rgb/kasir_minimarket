@@ -10,7 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SettingController; // <-- Ditambahkan
+use App\Http\Controllers\SettingController; 
 use App\Http\Middleware\AdminOnly;
 
 // ROUTE GUEST (Belum Login)
@@ -57,9 +57,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('products', ProductController::class);
         Route::resource('users', UserController::class);
 
-        // Pengaturan Toko <-- Ditambahkan
+        // Pengaturan Toko
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+        // Pengaturan Bahasa (Mendukung POST & PUT sekaligus)
+        Route::get('/settings/language', [SettingController::class, 'language'])->name('settings.language');
+        Route::match(['post', 'put'], '/settings/language', [SettingController::class, 'updateLanguage'])->name('settings.language.update');
 
         // Barang Masuk & Pembayaran
         Route::get('/barang-masuk', [BarangMasukController::class, 'index'])->name('barang-masuk.index');

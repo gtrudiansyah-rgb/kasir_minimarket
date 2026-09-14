@@ -16,6 +16,7 @@
                         <th width="50">No</th>
                         <th>No. Invoice</th>
                         <th>Tanggal & Waktu</th>
+                        <th>Kasir</th> <!-- 1. Tambahkan Header Kasir -->
                         <th>Total Belanja</th>
                         <th>Metode Bayar</th>
                         <th width="180">Aksi</th>
@@ -27,6 +28,10 @@
                             <td>{{ $index + 1 }}</td>
                             <td><span class="badge bg-secondary">{{ $item->invoice_number ?? $item->no_faktur }}</span></td>
                             <td>{{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y H:i') }}</td>
+                            
+                            <!-- 2. Tampilkan Nama Kasir dari relasi user/kasir -->
+                            <td>{{ $item->user->name ?? $item->kasir->name ?? 'Kasir' }}</td>
+                            
                             <td>Rp {{ number_format($item->total_price ?? $item->total_harga ?? 0, 0, ',', '.') }}</td>
                             <td>{{ strtoupper($item->payment_method ?? 'TUNAI') }}</td>
                             <td>
@@ -36,7 +41,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">Belum ada riwayat transaksi penjualan.</td>
+                            <!-- 3. Sesuaikan colspan menjadi 7 karena jumlah kolom bertambah -->
+                            <td colspan="7" class="text-center">Belum ada riwayat transaksi penjualan.</td>
                         </tr>
                     @endforelse
                 </tbody>

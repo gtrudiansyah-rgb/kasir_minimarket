@@ -38,4 +38,22 @@ class SettingController extends Controller
 
         return redirect()->back()->with('success', 'Pengaturan toko berhasil diperbarui!');
     }
+
+    public function language()
+    {
+        return view('settings.language');
+    }
+
+    // TAMBAHKAN METHOD INI DI SINI
+    public function updateLanguage(Request $request)
+    {
+        $request->validate([
+            'language' => 'required|in:id,en',
+        ]);
+
+        // Menyimpan pilihan bahasa ke dalam session
+        session(['locale' => $request->language]);
+
+        return redirect()->back()->with('success', 'Bahasa aplikasi berhasil diperbarui!');
+    }
 }

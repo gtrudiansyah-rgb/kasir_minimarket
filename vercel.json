@@ -1,5 +1,6 @@
 {
+  "outputDirectory": "public",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/public/index.php" }
+    { "source": "/(.*)", "destination": "/index.php" }
   ]
 }
